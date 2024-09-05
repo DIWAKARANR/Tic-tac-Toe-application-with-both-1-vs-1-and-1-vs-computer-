@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Tic Tac Toe</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            overflow: hidden;
+        }
+        .container {
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            background-color: white;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .cell:hover {
+            background-color: #f9f9f9;
+            transform: scale(1.05);
+        }
+        .status {
+            margin-bottom: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        .button:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+        .hidden {
+            display: none;
+        }
+        .difficulty-buttons {
+            margin-top: 10px;
+        }
+        .difficulty-buttons .button {
+            background-color: #008CBA;
+        }
+        .difficulty-buttons .button:hover {
+            background-color: #007B9A;
+        }
+        .winning-cell {
+            background-color: #4CAF50;
+            color: white;
+            animation: pulse 0.5s infinite alternate;
+        }
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        #background-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="background-animation"></canvas>
+    <div class="container">
+        <div class="status">Select Game Mode</div>
+        <div class="board hidden">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+        <button class="button" id="modeToggle">1 vs 1</button>
+        <button class="button" id="startGame">Start Game</button>
+        <div class="difficulty-buttons hidden">
+            <button class="button" onclick="setDifficulty('easy')">Easy</button>
+            <button class="button" onclick="setDifficulty('medium')">Medium</button>
+            <button class="button" onclick="setDifficulty('hard')">Hard</button>
+        </div>
+        <button class="button" id="backButton">Back</button>
+        <button class="button hidden" id="resetButton">Reset Game</button>
+    </div>
+    <script>
+        const board = document.querySelector('.board');
+        const cells = document.querySelectorAll('.cell');
+        const statusDiv = document.querySelector('.status');
+        const modeToggleButton = document.getElementById('modeToggle');
+        const startGameButton = document.getElementById('startGame');
+        const difficultyButtons = document.querySelector('.difficulty-buttons');
+        const backButton = document.getElementById('backButton');
+        const resetButton = document.getElementById('resetButton');
+        let currentPlayer = 'X';
+        let gameMode = 'human';
+        let difficulty = 'easy';
+        let gameActive = false;
+        let boardState = Array(9).fill(null);
+
+        function toggleMode() {
+            if (gameMode === 'human') {
+                gameMode = 'computer';
+                modeToggleButton.textContent = '1 vs Computer';
+                difficultyButtons.classList.remove('hidden');
+            } else {
+                gameMode = 'human';
+                modeToggleButton.textContent = '1 vs 1';
+                difficultyButtons.classList.add('hidden');
+            }
+        }
+
+        function setDifficulty(diff) {
+            difficulty = diff;
+            startGame();
+        }
+
+        function startGame() {
+            gameActive = true;
+            boardState.fill(null);
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('winning-cell');
+            });
+            currentPlayer = 'X';
+            statusDiv.textContent = `Player X's turn`;
+            board.classList.remove('hidden');
+            resetButton.classList.remove('hidden');
+            modeToggleButton.classList.add('hidden');
+            startGameButton.classList.add('hidden');
+            difficultyButtons.classList.add('hidden');
+        }
+
+        function resetGame() {
+            gameActive = false;
+            board.classList.add('hidden');
+            resetButton.classList.add('hidden');
+            modeToggleButton.classList.remove('hidden');
+            startGameButton.classList.remove('hidden');
+            if (gameMode === 'computer') {
+                difficultyButtons.classList.remove('hidden');
+            }
+            statusDiv.textContent = 'Select Game Mode';
+        }
+
+        function goBack() {
+            resetGame();
+            gameMode = 'human';
+            modeToggleButton.textContent = '1 vs 1';
+            difficultyButtons.classList.add('hidden');
+        }
+
+        function checkWin() {
+            const winningCombinations = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+            for (const [a, b, c] of winningCombinations) {
+                if (boardState[a] && boardState[a] === boardState[b] && boardState[a] === boardState[c]) {
+                    cells[a].classList.add('winning-cell');
+                    cells[b].classList.add('winning-cell');
+                    cells[c].classList.add('winning-cell');
+                    return boardState[a];
+                }
+            }
+            return boardState.includes(null) ? null : 'Tie';
+        }
+
+        function handleCellClick(event) {
+            const cell = event.target;
+            const index = cell.dataset.index;
+
+            if (!gameActive || boardState[index]) return;
+
+            boardState[index] = currentPlayer;
+            cell.textContent = currentPlayer;
+            cell.style.transform = 'scale(0)';
+            setTimeout(() => {
+                cell.style.transform = 'scale(1)';
+            }, 150);
+
+            const result = checkWin();
+            if (result) {
+                gameActive = false;
+                statusDiv.textContent = result === 'Tie' ? 'It\'s a Tie!' : `${result} Wins!`;
+                return;
+            }
+
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            statusDiv.textContent = `Player ${currentPlayer}'s turn`;
+
+            if (gameMode === 'computer' && currentPlayer === 'O') {
+                setTimeout(computerMove, 500);
+            }
+        }
+
+        function computerMove() {
+            let move;
+            switch (difficulty) {
+                case 'easy':
+                    move = getRandomMove();
+                    break;
+                case 'medium':
+                    move = Math.random() < 0.5 ? getBestMove() : getRandomMove();
+                    break;
+                case 'hard':
+                    move = getBestMove();
+                    break;
+            }
+
+            boardState[move] = 'O';
+            cells[move].textContent = 'O';
+            cells[move].style.transform = 'scale(0)';
+            setTimeout(() => {
+                cells[move].style.transform = 'scale(1)';
+            }, 150);
+
+            const result = checkWin();
+            if (result) {
+                gameActive = false;
+                statusDiv.textContent = result === 'Tie' ? 'It\'s a Tie!' : `${result} Wins!`;
+                return;
+            }
+
+            currentPlayer = 'X';
+            statusDiv.textContent = `Player ${currentPlayer}'s turn`;
+        }
+
+        function getRandomMove() {
+            const emptyIndices = boardState
+                .map((value, index) => value === null ? index : null)
+                .filter(value => value !== null);
+            return emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+        }
+
+        function getBestMove() {
+            let bestScore = -Infinity;
+            let bestMove;
+            for (let i = 0; i < 9; i++) {
+                if (boardState[i] === null) {
+                    boardState[i] = 'O';
+                    let score = minimax(boardState, 0, false);
+                    boardState[i] = null;
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMove = i;
+                    }
+                }
+            }
+            return bestMove;
+        }
+
+        function minimax(board, depth, isMaximizing) {
+            let result = checkWin();
+            if (result !== null) {
+                return result === 'O' ? 10 - depth : result === 'X' ? depth - 10 : 0;
+            }
+
+            if (isMaximizing) {
+                let bestScore = -Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === null) {
+                        board[i] = 'O';
+                        let score = minimax(board, depth + 1, false);
+                        board[i] = null;
+                        bestScore = Math.max(score, bestScore);
+                    }
+                }
+                return bestScore;
+            } else {
+                let bestScore = Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === null) {
+                        board[i] = 'X';
+                        let score = minimax(board, depth + 1, true);
+                        board[i] = null;
+                        bestScore = Math.min(score, bestScore);
+                    }
+                }
+                return bestScore;
+            }
+        }
+
+        board.addEventListener('click', handleCellClick);
+        modeToggleButton.addEventListener('click', toggleMode);
+        startGameButton.addEventListener('click', () => {
+            if (gameMode === 'human') {
+                startGame();
+            } else {
+                difficultyButtons.classList.remove('hidden');
+            }
+        });
+        resetButton.addEventListener('click', resetGame);
+        backButton.addEventListener('click', goBack);
+
+        // Background animation
+        const canvas = document.getElementById('background-animation');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const particles = [];
+        const particleCount = 100;
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 5 + 1;
+                this.speedX = Math.random() * 3 - 1.5;
+                this.speedY = Math.random() * 3 - 1.5;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.size > 0.2) this.size -= 0.1;
+            }
+            draw() {
+                ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function createParticles() {
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+                if (particles[i].size <= 0.2) {
+                    particles.splice(i, 1);
+                    i--;
+                }
+            }
+            if (particles.length < particleCount) {
+                createParticles();
+            }
+            requestAnimationFrame(animateParticles);
+        }
+
+        createParticles();
+        animateParticles();
+    </script>
+</body>
+  </html>
